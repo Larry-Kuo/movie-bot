@@ -14,21 +14,32 @@ load_dotenv()
 
 
 machine = TocMachine(
-    states=["user", "state1", "state2"],
+    states=["user", "functions","search","searchCal", "suggestions", "suggestionGenre","suggestionDetail", "recommendList","searchSuggestion" ,"fsm"],
     transitions=[
-        {
-            "trigger": "advance",
-            "source": "user",
-            "dest": "state1",
-            "conditions": "is_going_to_state1",
-        },
-        {
-            "trigger": "advance",
-            "source": "user",
-            "dest": "state2",
-            "conditions": "is_going_to_state2",
-        },
-        {"trigger": "go_back", "source": ["state1", "state2"], "dest": "user"},
+        {"trigger": "advance", "source": "user", "dest": "fsm", "conditions": "is_going_to_fsm",},
+        {"trigger": "advance", "source": "fsm", "dest": "functions", "conditions": "is_going_to_functions",},
+        {"trigger": "advance", "source": "user", "dest": "functions", "conditions": "is_going_to_functions",},
+        {"trigger": "advance", "source": "user", "dest": "state2", "conditions": "is_going_to_state2",},
+        {"trigger": "advance", "source": "functions", "dest": "suggestions", "conditions": "is_going_to_suggestions",},
+        {"trigger": "advance", "source": "suggestions", "dest": "suggestionGenre", "conditions": "is_going_to_suggestionGenre",},
+        {"trigger": "advance", "source": "suggestionGenre", "dest": "suggestionDetail", "conditions": "is_going_to_suggestionDetail",},
+        {"trigger": "advance", "source": "suggestionGenre", "dest": "suggestionGenre", "conditions": "is_going_to_suggestionGenre",},
+        {"trigger": "advance", "source": "suggestionDetail", "dest": "suggestions", "conditions": "is_going_back_to_suggestions",},
+        {"trigger": "advance", "source": "functions", "dest": "search", "conditions": "is_going_to_search",},
+        {"trigger": "advance", "source": "search", "dest": "searchCal", "conditions": "is_going_to_searchCal",},
+        {"trigger": "advance", "source": "searchCal", "dest": "search", "conditions": "is_going_back_from_searchCal",},
+        {"trigger": "advance", "source": "suggestionDetail", "dest": "recommendList", "conditions": "is_going_to_recommendList",},
+        {"trigger": "advance", "source": "recommendList", "dest": "suggestions", "conditions": "is_going_to_suggestionGenre",},
+        {"trigger": "advance", "source": "recommendList", "dest": "suggestionDetails", "conditions": "is_going_to_suggestionDetail",},
+
+        {"trigger": "advance", "source": "searchCal", "dest": "functions", "conditions": "is_going_to_functions",},
+        {"trigger": "advance", "source": "recommendList", "dest": "functions", "conditions": "is_going_to_functions",},
+        {"trigger": "advance", "source": "suggestions", "dest": "functions", "conditions": "is_going_to_functions",},
+        {"trigger": "advance", "source": "suggestionGenre", "dest": "functions", "conditions": "is_going_to_functions",},
+        {"trigger": "advance", "source": "suggestionDetail", "dest": "functions", "conditions": "is_going_to_functions",},
+        {"trigger": "advance", "source": "suggestionDetail", "dest": "recommendList", "conditions": "is_going_to_recommendList",},
+        {"trigger": "advance", "source": "suggestionDetail", "dest": "suggestions", "conditions": "is_going_back_to_suggestions",},
+        {"trigger": "go_back", "source": ["functions", "state2", "suggestions", "suggestionGenre","suggestionDetail", "functions", "search", "searchCal", "recommendList, searchSuggestion"], "dest": "user"},
     ],
     initial="user",
     auto_transitions=False,
@@ -100,11 +111,12 @@ def webhook_handler():
             continue
         if not isinstance(event.message.text, str):
             continue
-        print(f"\nFSM STATE: {machine.state}")
-        print(f"REQUEST BODY: \n{body}")
+        # print(f"\nFSM STATE: {machine.state}")
+        # print(f"REQUEST BODY: \n{body}")
+        
         response = machine.advance(event)
         if response == False:
-            send_text_message(event.reply_token, "Not Entering any State")
+            send_text_message(event.reply_token, "請按照指示操作")
 
     return "OK"
 
